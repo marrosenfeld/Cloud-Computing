@@ -1,3 +1,6 @@
 .dep.inc
 nbproject/
 dist/
+main
+output.png
+*.csv
