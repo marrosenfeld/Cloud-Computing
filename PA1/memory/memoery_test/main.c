@@ -15,27 +15,29 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <sys/time.h>
-#define ARRAY_SIZE 100000000 //define an array size bigger than cache
+#define ARRAY_SIZE 80000000//150000000 //define an array size bigger than cache
                   
-void measure(int block_size, int iterations, int threads, double* throughput, double* latency);
+void measure(int block_size, const double operations, int threads, double* throughput, double* latency);
 
 int main(int argc, char** argv) {
     
     FILE *fp;
-    fp = fopen("result.csv", "w+");
     double *throughput, *latency;
-    int block_sizes[3] = {1,1000,1000000};
+    int block_sizes[3] = {1,1024, 1048576};
     int threads[2] = {1,2};
-    int i,j;
+    double operations[6] = { ARRAY_SIZE, ARRAY_SIZE, 50000000,50000000,100000,100000};
+    
+    int i,j,o;
     
     throughput = (double*)malloc(1*sizeof(double));
     latency = (double*)malloc(1*sizeof(double));
-    
+    fp = fopen("result.csv", "w+");
+    o=0;
     for(i=0; i<(sizeof(block_sizes)/sizeof(int));i++){
-        for(j=0; i<(sizeof(threads)/sizeof(int));j++){
-            measure(block_sizes[i],10000, threads[j], throughput, latency);   
+        for(j=0; j<(sizeof(threads)/sizeof(int));j++){
+            measure(block_sizes[i], operations[o], threads[j], throughput, latency);   
             fprintf(fp, "%i, %i, %f, %f\n",block_sizes[i],threads[j],*throughput, *latency);
+            o++;
         }
     }
     
@@ -43,34 +45,35 @@ int main(int argc, char** argv) {
     return (EXIT_SUCCESS);
 }
 
-void measure(const int block_size, const int operations, const int threads, double* throughput, double* latency){
+void measure(const int block_size, const double operations, const int threads, double* throughput, double* latency){
     //source array to copy
-    void *source_array = (char*)malloc(block_size * operations * sizeof(char));
+    char *source_array = (char*)malloc(ARRAY_SIZE * sizeof(char));
     //target array to copy
-    void *target_array = (char*)malloc(block_size * operations * sizeof(char));
-    clock_t* times = (clock_t*)malloc(operations * sizeof(clock_t));
+    char *target_array = (char*)malloc(ARRAY_SIZE * sizeof(char));
     //times
-    clock_t start_time, end_time, start_time_latency, end_time_latency;
-    clock_t sum=0;
-    int i;
+    clock_t start_time, end_time;
+    int i, block_count;
+    double total_seconds;
     
+    block_count = ARRAY_SIZE / block_size;
+    //operations=ARRAY_SIZE/block_size;
     start_time = clock();
     
     for(i = 0; i < operations; i++) 
     {
-        start_time_latency = clock();
-        int block_number = (iterations/block_size) % (ARRAY_SIZE/block_size);
-        memcpy(target_array+block_number,source_array+block_number,block_size);
-        end_time_latency = clock();
-       
-        times[i] = end_time_latency - start_time_latency;
+        int block_number = i % block_count;
+        memcpy(target_array+(block_number*block_size),source_array+(block_number*block_size),block_size);   
     }
     
-    *throughput = (end_time-start_time)/(double)CLOCKS_PER_SEC;
+    end_time = clock();
+    printf("\nBlock size: %d, threads: %d\n", block_size, threads);
+    printf("Total seconds: %f\n", (end_time-start_time)/((double)CLOCKS_PER_SEC));
+    printf("Mb: %f\n", (operations*(double)block_size/(double)1048576));
     
-    for(i = 0; i < iterations; i++){
-        sum += times[i];
-    }
-    
-    *latency = (sum / ((double)iterations)) /(double)CLOCKS_PER_SEC;
+    total_seconds = (end_time-start_time)/((double)CLOCKS_PER_SEC);
+    //total_seconds = (end_time-start_time)/100000;
+    printf("Throughput: %f\n", (operations*(double)block_size/1048576) / (double)total_seconds);
+    *throughput = (operations*(double)block_size/1048576) / (double)total_seconds;
+    free(source_array);
+    free(target_array);
 }
