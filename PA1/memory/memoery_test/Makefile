@@ -1,5 +1,5 @@
 all: main.c 
-	gcc -g -Wall -o main main.c
+	gcc -pthread -g -Wall -o main main.c
 
   clean: 
 	$(RM) main
