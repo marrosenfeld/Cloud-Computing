@@ -1,5 +1,5 @@
-all: main.c 
-	gcc -pthread -g -Wall -o main main.c
+all: evaluate_memory.c 
+	gcc -pthread -g -Wall -o evaluate_memory evaluate_memory.c
 
   clean: 
-	$(RM) main
+	$(RM) evaluate_memory
