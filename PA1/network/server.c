@@ -14,14 +14,14 @@ typedef struct thread_data {
 
 int main(int argc , char *argv[])
 {
-    int socket_fd , new_socket , c , *thread_data, threads;
+    int socket_fd , new_socket , c , *thread_data, port;
     struct sockaddr_in server , client;
     
     if (argc < 2){
-        printf("%s","no of threads required\n");
+        printf("%s","port required\n");
         exit(1);
     }
-    threads = atoi(argv[1]);
+    port = atoi(argv[1]);
     
     //Create socket
     socket_fd = socket(AF_INET , SOCK_STREAM , 0);
@@ -33,8 +33,8 @@ int main(int argc , char *argv[])
     //Create sockaddr info
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
-    server.sin_port = htons( 5201 );//default port
-    printf("server listening port %i, address %i", server.sin_port, server.sin_addr.s_addr);
+    server.sin_port = htons( port );//default port
+    printf("server listening port %i, address %i\n", server.sin_port, server.sin_addr.s_addr);
     
     //Bind socket
     if( bind(socket_fd,(struct sockaddr *)&server , sizeof(server)) < 0)
@@ -44,7 +44,6 @@ int main(int argc , char *argv[])
     }
     printf("successful binding\n");
      
-    
     listen(socket_fd , 5);
     printf("Listening...\n");
     
@@ -61,7 +60,7 @@ int main(int argc , char *argv[])
         *thread_data = new_socket;
         
         if(pthread_create( &handler_thread , NULL ,  connection_handler , (void*) thread_data) < 0){
-            printf("error creating thrread\n");
+            printf("error creating thread\n");
             exit(1);
         }
          
@@ -77,9 +76,7 @@ int main(int argc , char *argv[])
     return (EXIT_SUCCESS);
 }
  
-/*
- * This will handle connection for each client
- * */
+//receive all data from client
 void *connection_handler(void *socket_desc)
 {
     //Get the socket descriptor
@@ -87,11 +84,11 @@ void *connection_handler(void *socket_desc)
     int block_size, read_count,i; 
     char* buffer;
     
-    printf("start receiving\n");
+    printf("Start receiving from client\n");
     read(sock,&block_size,sizeof(int));
-    printf("%i\n",block_size);
+    printf("Block size: %i\n",block_size);
     read(sock,&read_count,sizeof(int));
-    printf("%i\n",read_count);
+    printf("Block count: %i\n",read_count);
     buffer = malloc(sizeof(char)*block_size);
     for(i=0;i<read_count;i++){
         int n = read(sock,buffer,block_size);
@@ -99,10 +96,8 @@ void *connection_handler(void *socket_desc)
             printf("error reading\n");
             exit(1);
         }
-        printf("%i\n",n);
-        
     }
-    printf("end receiving\n"); 
+    printf("End receiving from client\n"); 
     
     //close(sock);
     free(socket_desc);
