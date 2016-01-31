@@ -6,9 +6,11 @@
 #include<unistd.h>  
 #include <pthread.h>
 #include <errno.h>
+
 typedef enum {
     TCP, UDP
 } protocol;
+const char* protocolNames[] = {"TCP", "UDP"};
 
 //structure to pass all data to the thread
 typedef struct thread_data {
@@ -17,12 +19,13 @@ typedef struct thread_data {
     char* server_address;
 } thread_data;
 
-const char* protocolNames[] = {"TCP", "UDP"};
+
 void measure(int block_size, const double operations, const int threads, const protocol protocol, char* server_address, const int server_port_tcp, const int server_port_udp, double* throughput, double* latency);
 void *perform(void *arg);//thread
 
 int main(int argc, char** argv) {
-
+    
+    
     FILE *fp;
     double *throughput, *latency;
     int block_sizes[3] = {1,1024, 65507};
@@ -31,17 +34,18 @@ int main(int argc, char** argv) {
     int i, j, k, it, iterations, server_port_tcp, server_port_udp;
     char* server_address;
 
-     if (argc < 5){
+    //validate program arguments
+    if (argc < 5){
         printf("%s","Usage: client [iterations] [server address] [port_tcp] [port_udp] \n");
         exit(1);
     }
     
+    //read arguments
     server_address = malloc(sizeof(char)*32);
+    iterations = atoi(argv[1]);
     server_address = argv[2];
     server_port_tcp = atoi(argv[3]);
     server_port_udp = atoi(argv[4]);
-    
-    iterations = atoi(argv[1]);
     
     throughput = (double*) malloc(sizeof (double));
     latency = (double*) malloc(sizeof (double));
@@ -56,9 +60,7 @@ int main(int argc, char** argv) {
                     measure(block_sizes[i], operations[i], threads[j], k, server_address, server_port_tcp, server_port_udp, throughput, latency);
                     total_th += *throughput;
 		}
-                
                 fprintf(fp, "%i, %i, %s, %f, %f\n", block_sizes[i], threads[j], protocolNames[k], total_th/(double)iterations, *latency);
-
             }
         }
     }
@@ -77,8 +79,7 @@ void measure(int block_size, const double operations, const int thread_count, co
     thread_data *data = (thread_data*) malloc(thread_count * sizeof (thread_data));
     
     start_time = clock();
-    printf("start %zu\n",start_time);
-    //create threads
+    //create threads. Each thread will send operations / thread_count blocks
     for (n = 0; n < thread_count; n++) {
         data[n].operation_count = operations / thread_count;
         data[n].protocol = protocol;
@@ -95,7 +96,6 @@ void measure(int block_size, const double operations, const int thread_count, co
     }
 
     end_time = clock();
-    printf("end %zu\n",end_time);
 
     total_seconds = (end_time - start_time) / ((double) CLOCKS_PER_SEC);
     //print in console
@@ -122,14 +122,14 @@ void *perform(void *arg) {
     server_port_udp = tdata->server_port_udp;
     block_size = tdata->block_size;
     block_count = tdata->operation_count;
-    prot = tdata->protocol; 
+    prot = tdata->protocol;   
     
-    
-    //Create socket
+    //Create socket (udp or tcp)
     socket_desc = socket(AF_INET , prot == TCP? SOCK_STREAM : SOCK_DGRAM , 0);
-    if (socket_desc == -1)
+    if (socket_desc < 0)
     {
         printf("Could not create socket");
+        exit(1);
     }
     
     server.sin_addr.s_addr = inet_addr(server_address);
@@ -143,23 +143,17 @@ void *perform(void *arg) {
             printf("connect error\n");
             exit(1);
         }
-    }
-     
-    int option = 1;
-    if(setsockopt(socket_desc, IPPROTO_IP, SO_SNDBUF, (char*)&option, sizeof(int)) < 0) {
-        printf("Can't set socket options:%d:%s\n", errno, strerror(errno));
-        exit(1);
+        //Send block_size
+        send(socket_desc , &block_size , sizeof(int) , 0);
+        send(socket_desc , &block_count , sizeof(int) , 0);
     }
     
-    //Send block_size
-    send(socket_desc , &block_size , sizeof(int) , 0);
-    send(socket_desc , &block_count , sizeof(int) , 0);
-    //buffer = (char*)malloc(block_size*block_count*sizeof(char));
     for(i=0;i<block_count;i++){
         int n;
+        
         if(prot == TCP) n = write(socket_desc , buffer  , block_size);
         else n = sendto(socket_desc,buffer, block_size,0,(struct sockaddr*)&server, sizeof (dest));
-        //printf("%i,",n);
+        
         if(n<0){
             printf("Error writing: %i\n",errno);
             exit(1);
@@ -170,7 +164,7 @@ void *perform(void *arg) {
         }
         
     }
-   // free(buffer);
+
     close(socket_desc);
     pthread_exit(NULL);
 }
