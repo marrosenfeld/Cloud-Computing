@@ -6,7 +6,8 @@
 #include<unistd.h>  
 #include <pthread.h>
 #include <errno.h>
-
+#include <time.h>
+#include <sys/time.h>
 typedef enum {
     TCP, UDP
 } protocol;
@@ -73,12 +74,14 @@ int main(int argc, char** argv) {
 void measure(int block_size, const double operations, const int thread_count, const protocol protocol, char* server_address, const int server_port_tcp, const int server_port_udp, double* throughput, double* latency){
 
     int n;
-    clock_t start_time, end_time;//times
+    struct timeval start_time, end_time;//times
     double total_seconds;
     pthread_t *threads = (pthread_t*) malloc(thread_count * sizeof (pthread_t));
     thread_data *data = (thread_data*) malloc(thread_count * sizeof (thread_data));
+   
     
-    start_time = clock();
+    gettimeofday(&start_time, NULL);
+    
     //create threads. Each thread will send operations / thread_count blocks
     for (n = 0; n < thread_count; n++) {
         data[n].operation_count = operations / thread_count;
@@ -94,10 +97,14 @@ void measure(int block_size, const double operations, const int thread_count, co
     for (n = 0; n < thread_count; n++) {
         pthread_join(threads[n], NULL);
     }
-
-    end_time = clock();
-
-    total_seconds = (end_time - start_time) / ((double) CLOCKS_PER_SEC);
+    gettimeofday(&end_time, NULL);
+    
+   // total_seconds = (end_time - start_time) / ((double) CLOCKS_PER_SEC);
+    
+   total_seconds =
+         (double) (end_time.tv_usec - start_time.tv_usec) / 1000000 +
+         (double) (end_time.tv_sec - start_time.tv_sec);
+    
     //print in console
     printf("\nBlock size: %d, threads: %d, protocol: %s\n", block_size, thread_count, protocolNames[protocol]);
     printf("Total seconds: %f\n", total_seconds);
@@ -150,7 +157,7 @@ void *perform(void *arg) {
     
     for(i=0;i<block_count;i++){
         int n;
-        
+        bzero(buffer, block_size);
         if(prot == TCP) n = write(socket_desc , buffer  , block_size);
         else n = sendto(socket_desc,buffer, block_size,0,(struct sockaddr*)&server, sizeof (dest));
         

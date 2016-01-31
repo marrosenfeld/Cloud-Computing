@@ -21,6 +21,7 @@ int main(int argc , char *argv[])
     int socket_fd , new_socket , c , *thread_data, port;
     struct sockaddr_in server , client;
     
+    //validate and read program arguments
     if (argc < 3){
         printf("Usage: [port] [protocol]\n");
         exit(1);
@@ -38,7 +39,7 @@ int main(int argc , char *argv[])
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons( port );//default port
-    printf("server listening port %i, address %i\n", server.sin_port, server.sin_addr.s_addr);
+    printf("server listening port %i, address %i, protocol %s\n", server.sin_port, server.sin_addr.s_addr, argv[2]);
     
     //Bind socket
     if( bind(socket_fd,(struct sockaddr *)&server , sizeof(server)) < 0)
@@ -129,16 +130,13 @@ void *connection_handler(void *socket_desc)
 void handle_udp(int sockfd){
     char* buffer;
     const int BUFFER_SIZE = 65536;
-    buffer = malloc(sizeof(char)*BUFFER_SIZE);
     struct sockaddr_in clientaddr; /* client addr */
     socklen_t clientlen; /* byte size of client's address */
     int n;
-    struct hostent *hostp; /* client host info */
-    char *hostaddrp; /* dotted decimal host addr string */
     
+    buffer = malloc(sizeof(char)*BUFFER_SIZE);
     clientlen = sizeof(clientaddr);
     while (1) {
-
         /*
          * recvfrom: receive a UDP datagram from a client
          */
@@ -148,21 +146,6 @@ void handle_udp(int sockfd){
         if (n < 0)
           printf("ERROR in recvfrom");
 
-        /* 
-         * gethostbyaddr: determine who sent the datagram
-         */
-        /*hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr, 
-                              sizeof(clientaddr.sin_addr.s_addr), AF_INET);
-        if (hostp == NULL)
-          printf("ERROR on gethostbyaddr");
-        
-        hostaddrp = inet_ntoa(clientaddr.sin_addr);
-        if (hostaddrp == NULL)
-          printf("ERROR on inet_ntoa\n");
-        printf("server received datagram from %s (%s)\n", 
-               hostp->h_name, hostaddrp);
-        printf("server received %zu/%d \n", strlen(buffer), n);
-         * */
       }
     free(buffer);
 }
