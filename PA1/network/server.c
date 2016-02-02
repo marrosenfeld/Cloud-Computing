@@ -30,6 +30,10 @@ int main(int argc , char *argv[])
     
     //Create socket
     socket_fd = socket(AF_INET , strcmp("TCP",argv[2])? SOCK_DGRAM : SOCK_STREAM , 0);
+    int a = 1;
+     if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVBUF, &a, sizeof(int)) == -1) {
+    printf("Error setting socket opts: \n");
+}
     if (socket_fd == -1){
         printf("Unable to create the socket");
         exit(1);
@@ -100,25 +104,18 @@ void *connection_handler(void *socket_desc)
     read(sock,&read_count,sizeof(int));
     printf("Block count: %i\n",read_count);
     buffer = malloc(sizeof(char)*block_size);
-    for(i=0;i<read_count;i++){
-        int n = read(sock,buffer,block_size);
-        //printf("%i,",n);
+    
+    int total=0;
+    while (total < 2000000){
+         int n = read(sock,buffer,2000000-total);
+        total+=n;
         if(n<0){
-                printf("error readingn\n");
-                exit(1);
-            }
-        while(n<block_size){
-            int r = read(sock,buffer,block_size-n);
-            
-            if(r<0){
-                printf("error reading\n");
-                exit(1);
-            }
-            n += r;
-            
+            printf("Error reading: \n");
+            exit(1);
         }
-        
+        printf("%i %i\n",n,total);
     }
+   
     printf("End receiving from client\n"); 
     
     //close(sock);

@@ -29,9 +29,9 @@ int main(int argc, char** argv) {
     
     FILE *fp;
     double *throughput, *latency;
-    int block_sizes[3] = {1,1024, 65507};
-    int threads[2] = {1,2};
-    double operations[3] = {1000000,1000000,1000000}; //will perform different amount of operations for different block sizes
+    int block_sizes[1] = {1};
+    int threads[1] = {1};
+    double operations[1] = {1}; //will perform different amount of operations for different block sizes
     int i, j, k, it, iterations, server_port_tcp, server_port_udp;
     char* server_address;
 
@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
     //iterate through all possible combinations (total of 12 combinations)
     for (i = 0; i < (sizeof (block_sizes) / sizeof (int)); i++) {
         for (j = 0; j < (sizeof (threads) / sizeof (int)); j++) {
-            for (k = TCP; k <= UDP; k++) {
+            for (k = TCP; k <= TCP; k++) {
                 double total_th = 0.0;
                 for(it=0;it<iterations;it++){
                     measure(block_sizes[i], operations[i], threads[j], k, server_address, server_port_tcp, server_port_udp, throughput, latency);
@@ -133,6 +133,7 @@ void *perform(void *arg) {
     
     //Create socket (udp or tcp)
     socket_desc = socket(AF_INET , prot == TCP? SOCK_STREAM : SOCK_DGRAM , 0);
+
     if (socket_desc < 0)
     {
         printf("Could not create socket");
@@ -155,22 +156,23 @@ void *perform(void *arg) {
         send(socket_desc , &block_count , sizeof(int) , 0);
     }
     
-    for(i=0;i<block_count;i++){
+    int total=0;
+      a = 1024;
+if (setsockopt(socket_desc, SOL_SOCKET, SO_SNDBUF, &a, sizeof(int)) == -1) {
+    printf("Error setting socket opts: \n");
+}
+    while (total < 2000000){
         int n;
-        bzero(buffer, block_size);
-        if(prot == TCP) n = write(socket_desc , buffer  , block_size);
-        else n = sendto(socket_desc,buffer, block_size,0,(struct sockaddr*)&server, sizeof (dest));
-        
+        n = write(socket_desc , buffer  , 2000000 - total);
+        total+=n;
         if(n<0){
             printf("Error writing: %i\n",errno);
             exit(1);
         }
-        if(n<block_size){
-            printf("Unable to write all block %i %i",n,block_size);
-            exit(1);
-        }
-        
+        printf("%i %i\n",n,total);
     }
+    
+   
 
     close(socket_desc);
     pthread_exit(NULL);
