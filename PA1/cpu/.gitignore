@@ -1,2 +1,4 @@
 result.csv
 evaluate_cpu
+*.csv
+*.png
