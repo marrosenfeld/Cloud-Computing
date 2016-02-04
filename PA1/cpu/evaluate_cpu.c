@@ -34,10 +34,17 @@ int main(int argc, char** argv) {
     FILE *fp, *fp2;
     double *value;
     int threads[3] = {1, 2, 4};
-    int i, k, it,iterations;
+    int i, k, it,iterations, seconds_per_iteration;
+	setvbuf (stdout, NULL, _IONBF, 0);
+	
+    if(argc < 3) {
+		printf("Usage: [no of iterations] [seconds per iteration]");
+		exit(1);
+	}
 
-    iterations = (argc != 2)?1:atoi(argv[1]);
-    
+	iterations = atoi(argv[1]);
+	seconds_per_iteration = atoi(argv[2]);
+    printf("%i",seconds_per_iteration);
     value = (double*) malloc(sizeof (double));
     fp = fopen("result.csv", "w+"); //write the results in csv file
     fp2 = fopen("resultInTime.csv", "w+"); //write the results in csv file
@@ -47,7 +54,7 @@ int main(int argc, char** argv) {
         for (k = I; k <= F; k++) {
             double total_th = 0.0;
             for(it=0;it<iterations;it++){
-                measure(threads[i], k, value, 1);
+                measure(threads[i], k, value, seconds_per_iteration);
                 total_th += *value;
             }
             fprintf(fp, "%i, %s, %f\n", threads[i], op_type_names[k], total_th/(double)iterations);
