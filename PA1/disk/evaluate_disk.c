@@ -175,7 +175,7 @@ void measure(const int block_size, const int seconds, const int thread_count, co
     //print in console
     printf("\nBlock size: %d, threads: %d, operation: %s, strategy: %s\n", block_size, thread_count, op_type_names[op_type],strategyNames[strategy]);
     printf("Total seconds: %f\n", total_seconds);
-    printf("Mb: %f\n", (totalOperations * (double) block_size / (double) 1048576));
+    printf("MB: %f\n", (totalOperations * (double) block_size / (double) 1048576));
     printf("Throughput: %f MB/sec\n", (totalOperations * (double) block_size / 1048576) / (double) total_seconds);
     printf("Latency: %f ms\n", (total_seconds / (double) totalOperations) * 1000);
     *throughput = (totalOperations * (double) block_size / 1048576) / (double) total_seconds;
