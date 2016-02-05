@@ -8,8 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <sys/time.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #define ARRAY_SIZE 80000000 //define an array size bigger than cache
 
@@ -17,8 +18,10 @@ typedef enum {
     SEQUENTIAL, RANDOM
 } strategy;
 const char* strategyNames[] = {"Sequential", "Random"};
-void measure(int block_size, const double operations, const int threads, const strategy strategy, double* throughput, double* latency);
+void measure(int block_size, const int seconds, const int threads, const strategy strategy, double* throughput, double* latency);
 void *perform(void *arg);//thread
+
+int flag = 1;
 
 //structure to pass all data to the thread, to allow the thread perform the memcpy operations in different sections of the memory
 typedef struct thread_data {
@@ -31,18 +34,21 @@ int main(int argc, char** argv) {
 
     FILE *fp;
     double *throughput, *latency;
-    int block_sizes[3] = {1, 1024, 1048576};
+    int block_sizes[3] = {8, 1024, 1048576};
     int threads[2] = {1, 2};
-    double operations[3] = {ARRAY_SIZE, 50000000, 100000}; //will perform different amount of operations for different block sizes
-    int i, j, k, it,iterations;
+    int i, j, k, it,iterations, seconds_per_iteration;
 
-    iterations = (argc != 2)?1:atoi(argv[1]);
+    if(argc < 3) {
+            printf("Usage: [no of iterations] [seconds per iteration]\n");
+            exit(1);
+    }
+
+    iterations = atoi(argv[1]);
+    seconds_per_iteration = atoi(argv[2]);
     
     throughput = (double*) malloc(sizeof (double));
     latency = (double*) malloc(sizeof (double));
     fp = fopen("result.csv", "w+"); //write the results in csv file
-
-
 
     //iterate through all possible combinations (total of 12 combinations)
     for (i = 0; i < (sizeof (block_sizes) / sizeof (int)); i++) {
@@ -50,7 +56,7 @@ int main(int argc, char** argv) {
             for (k = SEQUENTIAL; k <= RANDOM; k++) {
                 double total_th = 0.0;
                 for(it=0;it<iterations;it++){
-                    measure(block_sizes[i], operations[i], threads[j], k, throughput, latency);
+                    measure(block_sizes[i], seconds_per_iteration, threads[j], k, throughput, latency);
                     total_th += *throughput;
 		}
                 
@@ -75,7 +81,7 @@ void *perform(void *arg) {
     source_array = tdata->source_array;
     block_count = tdata->to - tdata->from + 1;
     srand(time(NULL));
-    for (i = 0; i < tdata->operation_count; i++) {
+    for (i = 0; flag; i++) {
         int r = rand();
         if (tdata->strategy == SEQUENTIAL)
             block_number = (i % block_count) + tdata->from;
@@ -83,25 +89,25 @@ void *perform(void *arg) {
             block_number = (r % block_count) + tdata->from;
         memcpy(target_array + (block_number * block_size), source_array + (block_number * block_size), block_size);
     }
+    tdata->operation_count = i;
     pthread_exit(NULL);
 }
 
-void measure(const int block_size, const double operations, const int thread_count, const strategy strategy, double* throughput, double* latency) {
+void measure(const int block_size, const int seconds, const int thread_count, const strategy strategy, double* throughput, double* latency) {
     
     char *source_array = (char*) malloc(ARRAY_SIZE * sizeof (char));//source array to copy
     char *target_array = (char*) malloc(ARRAY_SIZE * sizeof (char)); //target array to copy
-    clock_t start_time, end_time;//times
-    int block_count, n;
+    struct timeval start_time, end_time;//times
+    int block_count, n, totalOperations;
     double total_seconds;
     pthread_t *threads = (pthread_t*) malloc(thread_count * sizeof (pthread_t));
     thread_data *data = (thread_data*) malloc(thread_count * sizeof (thread_data));
 
     block_count = ARRAY_SIZE / block_size;
-    start_time = clock();
+    gettimeofday(&start_time, NULL);
 
     //create threads
     for (n = 0; n < thread_count; n++) {
-        data[n].operation_count = operations / thread_count;
         data[n].strategy = strategy;
         data[n].source_array = source_array;
         data[n].target_array = target_array;
@@ -111,21 +117,32 @@ void measure(const int block_size, const double operations, const int thread_cou
         pthread_create(&threads[n], NULL, perform, (void *) &data[n]);
     }
 
-    //wait threads
+    flag=1;
+    sleep(seconds);
+    flag = 0;
+    
+    //wait threads and count operations
+    totalOperations = 0;
     for (n = 0; n < thread_count; n++) {
         pthread_join(threads[n], NULL);
+	totalOperations += data[n].operation_count;
     }
 
-    end_time = clock();
-    
+    gettimeofday(&end_time, NULL);
 
-    total_seconds = (end_time - start_time) / ((double) CLOCKS_PER_SEC);
+    total_seconds =
+         (double) (end_time.tv_usec - start_time.tv_usec) / 1000000 +
+         (double) (end_time.tv_sec - start_time.tv_sec);
     //print in console
     printf("\nBlock size: %d, threads: %d, strategy: %s\n", block_size, thread_count, strategyNames[strategy]);
     printf("Total seconds: %f\n", total_seconds);
-    printf("Mb: %f\n", (operations * (double) block_size / (double) 1048576));
-    printf("Throughput: %f\n", (operations * (double) block_size / 1048576) / (double) total_seconds);
-    *throughput = (operations * (double) block_size / 1048576) / (double) total_seconds;
+    printf("Mb: %f\n", (totalOperations * (double) block_size / (double) 1048576));
+    printf("Throughput: %f\n", (totalOperations * (double) block_size / 1048576) / (double) total_seconds);
+    printf("Latency: %f ms\n", ( total_seconds / (double) totalOperations) * 1000);
+    *throughput = (totalOperations * (double) block_size / 1048576) / (double) total_seconds;
+    *latency = ( total_seconds / (double)totalOperations) * 1000;
     free(source_array);
     free(target_array);
+    free(data);
+    free(threads);
 }
