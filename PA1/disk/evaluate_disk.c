@@ -177,9 +177,9 @@ void measure(const int block_size, const int seconds, const int thread_count, co
     printf("Total seconds: %f\n", total_seconds);
     printf("Mb: %f\n", (totalOperations * (double) block_size / (double) 1048576));
     printf("Throughput: %f MB/sec\n", (totalOperations * (double) block_size / 1048576) / (double) total_seconds);
-    printf("Latency: %f ms\n", ((double) total_seconds / totalOperations) * 1000);
+    printf("Latency: %f ms\n", (total_seconds / (double) totalOperations) * 1000);
     *throughput = (totalOperations * (double) block_size / 1048576) / (double) total_seconds;
-    *latency = ((double) total_seconds / totalOperations) * 1000;
+    *latency = ( total_seconds / (double) totalOperations) * 1000;
     
     free(data);
     free(threads);
