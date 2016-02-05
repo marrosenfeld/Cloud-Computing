@@ -1,5 +1,5 @@
 make
-#./evaluate_disk $1 $2
+./evaluate_disk $1 $2
 gnuplot <<- EOF
 	set xlabel "Block Size (Bytes)"
 	set ylabel "Throughput (MB/sec)"
