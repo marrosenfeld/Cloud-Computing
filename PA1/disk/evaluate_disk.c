@@ -13,7 +13,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <fcntl.h>
-#define FILE_SIZE 30000000//in bytes
+#define FILE_SIZE 300000000//in bytes
 static const char filename[] = "dummy_file";
 
 typedef enum {
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
                         measure(block_sizes[i], seconds_per_iteration, threads[j], k, m, throughput, latency);
                         total_th += *throughput;
                     }
-                    fprintf(fp, "%i, %i, %s, %f, %f\n", block_sizes[i], threads[j], strategyNames[k], total_th/(double)iterations, *latency);
+                    fprintf(fp, "%i\t%i\t%s\t%s\t%f\t%f\n", block_sizes[i], threads[j], strategyNames[k], op_type_names[m],total_th/(double)iterations, *latency);
                 }
             }
         }
