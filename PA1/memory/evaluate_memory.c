@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 
     FILE *fp;
     double *throughput, *latency;
-    int block_sizes[3] = {8, 1024, 1048576};
+    int block_sizes[3] = {1, 1024, 1048576};
     int threads[2] = {1, 2};
     int i, j, k, it,iterations, seconds_per_iteration;
 
@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
                     total_th += *throughput;
 		}
                 
-                fprintf(fp, "%i, %i, %s, %f, %f\n", block_sizes[i], threads[j], strategyNames[k], total_th/(double)iterations, *latency);
+                fprintf(fp, "%i\t%i\t%s\t%f\t%f\n", block_sizes[i], threads[j], strategyNames[k], total_th/(double)iterations, *latency);
 
             }
         }
