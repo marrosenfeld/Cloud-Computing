@@ -1,5 +1,5 @@
 make
-#./evaluate_memory $1 $2
+./evaluate_memory $1 $2
 gnuplot <<- EOF
 	set xlabel "Block Size (Bytes)"
 	set ylabel "Throughput (MB/sec)"
