@@ -16,7 +16,7 @@
 typedef enum {
     I, F
 } op_type;
-const char* op_type_names[] = {"Integer", "Floating Point"};
+const char* op_type_names[] = {"Integer", "FloatingPoint"};
 void measure(const int threads, const op_type op_type, double* value, int time);
 void *perform(void *arg);//thread
 
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
                 measure(threads[i], k, value, seconds_per_iteration);
                 total_th += *value;
             }
-            fprintf(fp, "%i, %s, %f\n", threads[i], op_type_names[k], total_th/(double)iterations);
+            fprintf(fp, "%i\t%s\t%f\n", threads[i], op_type_names[k], total_th/(double)iterations);
         }
     }
 
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
     for (k = I; k <= F; k++) {
         for(i=0; i < 60; i++){
             measure(4, k, value, 1);
-            fprintf(fp2, "%i, %f\n", i, *value);
+            fprintf(fp2, "%i, %f\n", i+1, *value);
         }
     }
     
