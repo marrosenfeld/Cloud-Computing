@@ -16,7 +16,7 @@
 typedef enum {
     I, F
 } op_type;
-const char* op_type_names[] = {"Integer", "FloatingPoint"};
+const char* op_type_names[] = {"Int", "FP"};
 void measure(const int threads, const op_type op_type, double* value, int time);
 void *perform(void *arg);//thread
 
@@ -44,10 +44,12 @@ int main(int argc, char** argv) {
 
 	iterations = atoi(argv[1]);
 	seconds_per_iteration = atoi(argv[2]);
-    printf("%i",seconds_per_iteration);
+    
     value = (double*) malloc(sizeof (double));
     fp = fopen("result.csv", "w+"); //write the results in csv file
     fp2 = fopen("resultInTime.csv", "w+"); //write the results in csv file
+    
+    printf("%s\t%s\t%s\n", "Threads", "Op", "GOPS");
     
     //iterate through all possible combinations (total of 8 combinations)
     for (i = 0; i < (sizeof (threads) / sizeof (int)); i++) {
@@ -60,9 +62,10 @@ int main(int argc, char** argv) {
             fprintf(fp, "%i\t%s\t%f\n", threads[i], op_type_names[k], total_th/(double)iterations);
         }
     }
-
+    
     //experiment every 1 second
     for (k = I; k <= F; k++) {
+        printf("\nStart 600 executions\n");
         for(i=0; i < 60; i++){
             measure(4, k, value, 1);
             fprintf(fp2, "%i, %f\n", i+1, *value);
@@ -140,11 +143,8 @@ void measure(const int thread_count, const op_type op_type, double* value, int t
          (double) (end_time.tv_sec - start_time.tv_sec);
     
     //print in console
-    printf("\nThreads: %d, op_type: %s\n", thread_count, op_type_names[op_type]);
-    printf("Total seconds: %f\n", total_seconds);
-    printf("Operations: %f\n", operations);
-    printf("OPS per second: %f\n", (operations ) / (double) total_seconds);
-    printf("GOPS per second: %f\n", ((operations / (double) total_seconds) / (double)1000000000));
+    
     *value = ((operations / (double) total_seconds) / (double)1000000000);
+    printf("%i\t%s\t%f\n", thread_count, op_type_names[op_type], *value);
     free(threads);
 }
