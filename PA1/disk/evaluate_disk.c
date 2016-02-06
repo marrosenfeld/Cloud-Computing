@@ -179,7 +179,7 @@ void measure(const int block_size, const int seconds, const int thread_count, co
     *latency = ( total_seconds / (double) totalOperations) * 1000;
     
     printf("%i\t%i\t%s\t%s\t%f\t%f\t%f\t%f\n", block_size, thread_count, op_type_names[op_type],strategyNames[strategy], (totalOperations * (double) block_size / 1048576),total_seconds,*throughput, *latency);
-    
+    unlink(filename);
     free(data);
     free(threads);
 }
