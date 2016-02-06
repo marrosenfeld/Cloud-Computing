@@ -109,7 +109,7 @@ void *perform(void *arg) {
         if(tdata->op_type == READ){
             if(read(file, buffer, block_size) < 0)       
             {
-                printf("error1");
+                printf("error reading file");
 		exit(1);
             }
         }
@@ -117,7 +117,7 @@ void *perform(void *arg) {
         {
             if(write(file, buffer, block_size) < 0)
             {
-                printf("error2");
+                printf("error writing in file");
                 exit(1);
             }
         }
