@@ -17,7 +17,7 @@
 typedef enum {
     SEQUENTIAL, RANDOM
 } strategy;
-const char* strategyNames[] = {"Sequential", "Random"};
+const char* strategyNames[] = {"Seq", "Random"};
 void measure(int block_size, const int seconds, const int threads, const strategy strategy, double* throughput, double* latency);
 void *perform(void *arg);//thread
 
@@ -49,7 +49,8 @@ int main(int argc, char** argv) {
     throughput = (double*) malloc(sizeof (double));
     latency = (double*) malloc(sizeof (double));
     fp = fopen("result.csv", "w+"); //write the results in csv file
-
+    
+    printf("%s\t%s\t%s\t%s\t\t%s\t\t%s\t%s\n", "Block", "Threads","Method", "MB", "Seconds", "Throughput", "Latency");
     //iterate through all possible combinations (total of 12 combinations)
     for (i = 0; i < (sizeof (block_sizes) / sizeof (int)); i++) {
         for (j = 0; j < (sizeof (threads) / sizeof (int)); j++) {
@@ -134,13 +135,9 @@ void measure(const int block_size, const int seconds, const int thread_count, co
          (double) (end_time.tv_usec - start_time.tv_usec) / 1000000 +
          (double) (end_time.tv_sec - start_time.tv_sec);
     //print in console
-    printf("\nBlock size: %d, threads: %d, strategy: %s\n", block_size, thread_count, strategyNames[strategy]);
-    printf("Total seconds: %f\n", total_seconds);
-    printf("MB: %f\n", (totalOperations * (double) block_size / (double) 1048576));
-    printf("Throughput: %f MB/sec\n", (totalOperations * (double) block_size / 1048576) / (double) total_seconds);
-    printf("Latency: %f ms\n", ( total_seconds / (double) totalOperations) * 1000);
     *throughput = (totalOperations * (double) block_size / 1048576) / (double) total_seconds;
     *latency = ( total_seconds / (double)totalOperations) * 1000;
+    printf("%i\t%i\t%s\t%f\t%f\t%f\t%f\n", block_size, thread_count, strategyNames[strategy], (totalOperations * (double) block_size / 1048576),total_seconds,*throughput, *latency);
     free(source_array);
     free(target_array);
     free(data);
