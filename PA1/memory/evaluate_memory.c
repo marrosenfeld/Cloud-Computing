@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
 
 void *perform(void *arg) {
     thread_data *tdata = (thread_data *) arg;
-    int i, block_number, block_count, block_size;
+    int r, i, block_number, block_count, block_size;
     char *target_array, *source_array;
 
     block_size = tdata->block_size;
@@ -83,11 +83,12 @@ void *perform(void *arg) {
     block_count = tdata->to - tdata->from + 1;
     srand(time(NULL));
     for (i = 0; flag; i++) {
-        int r = rand();
+        r = rand();
         if (tdata->strategy == SEQUENTIAL)
             block_number = (i % block_count) + tdata->from;
-        else
+        else{
             block_number = (r % block_count) + tdata->from;
+        }
         memcpy(target_array + (block_number * block_size), source_array + (block_number * block_size), block_size);
     }
     tdata->operation_count = i;
