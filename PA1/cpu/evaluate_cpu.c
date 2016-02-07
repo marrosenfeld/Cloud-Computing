@@ -42,14 +42,14 @@ int main(int argc, char** argv) {
 		exit(1);
 	}
 
-	iterations = atoi(argv[1]);
-	seconds_per_iteration = atoi(argv[2]);
+    iterations = atoi(argv[1]);
+    seconds_per_iteration = atoi(argv[2]);
     
     value = (double*) malloc(sizeof (double));
     fp = fopen("result.csv", "w+"); //write the results in csv file
     fp2 = fopen("resultInTime.csv", "w+"); //write the results in csv file
     
-    printf("%s\t%s\t%s\n", "Threads", "Op", "GOPS");
+    printf("%s\t%s\t%s\t\t%s\n", "Threads", "Op", "GOPS", "Seconds");
     
     //iterate through all possible combinations (total of 8 combinations)
     for (i = 0; i < (sizeof (threads) / sizeof (int)); i++) {
@@ -65,8 +65,8 @@ int main(int argc, char** argv) {
     
     //experiment every 1 second
     for (k = I; k <= F; k++) {
-        printf("\nStart 600 executions\n");
-        for(i=0; i < 60; i++){
+        printf("\nStart 600 executions of %s operations\n", op_type_names[k]);
+        for(i=0; i < 600; i++){
             measure(4, k, value, 1);
             fprintf(fp2, "%i, %f\n", i+1, *value);
         }
@@ -80,25 +80,29 @@ int main(int argc, char** argv) {
 
 void *perform(void *arg) {
     thread_data *tdata = (thread_data *) arg;
-    int i;
+    int i,r;
     float d = 0;
     double operations = 0;
+    srand(time(NULL));
+    r = rand();
     if(tdata->op_type == I)
     {
         while(flag){
-            i = i + 1 + 2 * 3 * 4 + 1 * 4 * 5 * 7 + 1 + 2 * 3 * 4 + 1 * 4 * 5 * 7;
-            i = i + 1 + 2 * 3 * 4 + 1 * 4 * 5 * 7 + 1 + 2 * 3 * 4 + 1 * 4 * 5 * 7;
-            i = i + 1 + 2 * 3 * 4 + 1 * 4 * 5 * 7 + 1 + 2 * 3 * 4 + 1 * 4 * 5 * 7;
-
-            operations += 49;
+            i = i + r + 2;
+            i = i + r - 5;
+            i = i + r / 7;
+            i = i + r * 9;
+            operations += 9;
         }
     }
     else{
         while(flag){
-            d = d + 1.0 + 2.1 * 3.2 * 4.2 + 1.1 * 4.9 * 5.8 * 7.2 + 1.1 + 2.3 * 3.4 * 4.4 + 1.5 * 4.5 * 5.5 * 7.5;
-            d = d + 1.0 + 2.1 * 3.2 * 4.2 + 1.1 * 4.9 * 5.8 * 7.2 + 1.1 + 2.3 * 3.4 * 4.4 + 1.5 * 4.5 * 5.5 * 7.5;
-            d = d + 1.0 + 2.1 * 3.2 * 4.2 + 1.1 * 4.9 * 5.8 * 7.2 + 1.1 + 2.3 * 3.4 * 4.4 + 1.5 * 4.5 * 5.5 * 7.5;
-            operations += 49;
+            d = d + 1.0 + (double)r;
+            d = d * 5.0 + (double)r;
+            d = d / 3.0 + (double)r;
+            d = d - 4.0 + (double)r;
+            
+            operations += 8;
         }
     }
     
@@ -145,6 +149,6 @@ void measure(const int thread_count, const op_type op_type, double* value, int t
     //print in console
     
     *value = ((operations / (double) total_seconds) / (double)1000000000);
-    printf("%i\t%s\t%f\n", thread_count, op_type_names[op_type], *value);
+    printf("%i\t%s\t%f\t%f\n", thread_count, op_type_names[op_type], *value, total_seconds);
     free(threads);
 }
