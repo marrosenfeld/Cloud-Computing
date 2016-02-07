@@ -13,6 +13,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <fcntl.h>
+
 #define FILE_SIZE 300000000//in bytes
 static const char filename[] = "dummy_file";
 
@@ -31,7 +32,7 @@ void *perform(void *arg);//thread
 
 int flag = 1;
 
-//structure to pass all data to the thread, to allow the thread perform the memcpy operations in different sections of the memory
+//structure to pass all data to the thread, to allow the thread perform the disk operations in different sections of the disk
 typedef struct thread_data {
     int from, to, block_size;
     int operation_count;
@@ -45,15 +46,15 @@ int main(int argc, char** argv) {
 
     FILE *fp;
     double *throughput, *latency;
-    int block_sizes[3] = {1, 1024, 1048576};
-    int threads[2] = {1, 2}; 
+    int block_sizes[3] = {1, 1024, 10485760};
+    int threads[2] = {1,4}; 
     int i, j, k, m, iterations, seconds_per_iteration, it;
 
+    //process arguments
     if(argc < 3) {
             printf("Usage: [no of iterations] [seconds per iteration]\n");
             exit(1);
     }
-
     iterations = atoi(argv[1]);
     seconds_per_iteration = atoi(argv[2]);
 	
@@ -62,16 +63,18 @@ int main(int argc, char** argv) {
     fp = fopen("result.csv", "w+"); //write the results in csv file
 
     printf("%s\t%s\t%s\t%s\t%s\t\t%s\t\t%s\t%s\n", "Block", "Threads", "Op","Method", "MB", "Seconds", "Throughput", "Latency");
-    //iterate through all possible combinations (total of 12 combinations)
+    //iterate through all possible combinations (total of 24 combinations)
     for (i = 0; i < (sizeof (block_sizes) / sizeof (int)); i++) {
         for (j = 0; j < (sizeof (threads) / sizeof (int)); j++) {
             for (m = READ; m <= WRITE; m++) {
                 for (k = SEQUENTIAL; k <= RANDOM; k++) {
                     double total_th = 0.0;
+                    //loop the specified number of iterations
                     for(it=0;it<iterations;it++){
                         measure(block_sizes[i], seconds_per_iteration, threads[j], k, m, throughput, latency);
                         total_th += *throughput;
                     }
+                    //write experiment result in file
                     fprintf(fp, "%i\t%i\t%s\t%s\t%f\t%f\n", block_sizes[i], threads[j], strategyNames[k], op_type_names[m],total_th/(double)iterations, *latency);
                 }
             }
@@ -98,6 +101,7 @@ void *perform(void *arg) {
     block_count = tdata->to - tdata->from + 1;
     srand(time(NULL));
     for (i = 0; flag; i++) {
+        //select the block to read/write
         if (tdata->strategy == SEQUENTIAL){
             if((int)i%block_count == 0) 
                 lseek(file,tdata->from * block_size,SEEK_SET);
@@ -140,14 +144,14 @@ void measure(const int block_size, const int seconds, const int thread_count, co
 
     block_count = FILE_SIZE / block_size;
 	
-    //create dummy file
+    //create dummy file of size FILE-SIZE
     file=fopen(filename, "w");
     fseek(file, FILE_SIZE-1, SEEK_SET);
     fputc('\n', file);
     fclose(file);
 	
     gettimeofday(&start_time, NULL);
-	//create threads
+    //create threads
     for (n = 0; n < thread_count; n++) {  
         data[n].strategy = strategy;
         data[n].op_type = op_type;
@@ -173,12 +177,14 @@ void measure(const int block_size, const int seconds, const int thread_count, co
     total_seconds =
          (double) (end_time.tv_usec - start_time.tv_usec) / 1000000 +
          (double) (end_time.tv_sec - start_time.tv_sec);
-    //print in console
+    
     
     *throughput = (totalOperations * (double) block_size / 1048576) / (double) total_seconds;
     *latency = ( total_seconds / (double) totalOperations) * 1000;
     
+    //print in console
     printf("%i\t%i\t%s\t%s\t%f\t%f\t%f\t%f\n", block_size, thread_count, op_type_names[op_type],strategyNames[strategy], (totalOperations * (double) block_size / 1048576),total_seconds,*throughput, *latency);
+    //remove file
     unlink(filename);
     free(data);
     free(threads);
