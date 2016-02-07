@@ -3,8 +3,8 @@ if [ "$#" -lt 2 ]; then
 	exit 125
 fi
 
-#make
-#./evaluate_cpu $1 $2
+make
+./evaluate_cpu $1 $2
 gnuplot <<- EOF
 	set xlabel "Threads"
 	set ylabel "GFLOPS"
