@@ -38,11 +38,11 @@ int main(int argc, char** argv) {
     int threads[2] = {1, 2};
     int i, j, k, it,iterations, seconds_per_iteration;
 
+    //process arguments
     if(argc < 3) {
             printf("Usage: [no of iterations] [seconds per iteration]\n");
             exit(1);
     }
-
     iterations = atoi(argv[1]);
     seconds_per_iteration = atoi(argv[2]);
     
@@ -60,9 +60,8 @@ int main(int argc, char** argv) {
                     measure(block_sizes[i], seconds_per_iteration, threads[j], k, throughput, latency);
                     total_th += *throughput;
 		}
-                
+                //print results in file
                 fprintf(fp, "%i\t%i\t%s\t%f\t%f\n", block_sizes[i], threads[j], strategyNames[k], total_th/(double)iterations, *latency);
-
             }
         }
     }
@@ -82,15 +81,20 @@ void *perform(void *arg) {
     source_array = tdata->source_array;
     block_count = tdata->to - tdata->from + 1;
     srand(time(NULL));
+    
+    //iterate until main process change the flag
     for (i = 0; flag; i++) {
+        //select block number to copy
         r = rand();
         if (tdata->strategy == SEQUENTIAL)
             block_number = (i % block_count) + tdata->from;
         else{
             block_number = (r % block_count) + tdata->from;
         }
+        //perform operation
         memcpy(target_array + (block_number * block_size), source_array + (block_number * block_size), block_size);
     }
+    //write back the number of operations
     tdata->operation_count = i;
     pthread_exit(NULL);
 }
@@ -119,6 +123,7 @@ void measure(const int block_size, const int seconds, const int thread_count, co
         pthread_create(&threads[n], NULL, perform, (void *) &data[n]);
     }
 
+    //wait the specified sends
     flag=1;
     sleep(seconds);
     flag = 0;
@@ -138,7 +143,10 @@ void measure(const int block_size, const int seconds, const int thread_count, co
     //print in console
     *throughput = (totalOperations * (double) block_size / 1048576) / (double) total_seconds;
     *latency = ( total_seconds / (double)totalOperations) * 1000;
+    
+    //print in console
     printf("%i\t%i\t%s\t%f\t%f\t%f\t%f\n", block_size, thread_count, strategyNames[strategy], (totalOperations * (double) block_size / 1048576),total_seconds,*throughput, *latency);
+    
     free(source_array);
     free(target_array);
     free(data);

@@ -1,8 +1,8 @@
-make
 if [ "$#" -lt 2 ]; then
 	echo "Usage [iterations] [seconds per iteration]"
 	exit 125
 fi
+make
 ./evaluate_memory $1 $2
 gnuplot <<- EOF
 	set autoscale
