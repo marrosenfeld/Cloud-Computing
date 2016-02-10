@@ -86,6 +86,7 @@ void *perform(void *arg) {
     double operations = 0;
     srand(time(NULL));
     r = rand();
+    double dr = (double)r;
     if(tdata->op_type == I)
     {
         //Perform Integer operations
@@ -94,18 +95,25 @@ void *perform(void *arg) {
             i = i + r - 5;
             i = i + r / 7;
             i = i + r * 9;
-            operations += 9;
+            i = i + r + 2;
+            i = i + r - 5;
+            i = i + r / 7;
+            i = i + r * 9;
+	    operations += 27;
         }
     }
     else{
         //Perform Float Operations
         while(flag){
-            d = d + 1.0 + (double)r;
-            d = d * 5.0 + (double)r;
-            d = d / 3.0 + (double)r;
-            d = d - 4.0 + (double)r;
-            
-            operations += 8;
+            d = d + 1.0 + dr;
+            d = d * 5.0 + dr;
+            d = d / 3.0 + dr;
+            d = d - 4.0 + dr;
+            d = d + 1.0 + dr;
+            d = d * 5.0 + dr;
+            d = d / 3.0 + dr;
+            d = d - 4.0 + dr;
+            operations += 27;
         }
     }
     
