@@ -1,3 +1,0 @@
-sudo apt-get install iperf3 
-iperf3 -s
-iperf3 -c localhost
