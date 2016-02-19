@@ -3,4 +3,4 @@ evaluate_cpu
 *.csv
 *.png
 linpack/*
-linpack
+./linpack/
