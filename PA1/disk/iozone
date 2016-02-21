@@ -1,2 +1,0 @@
-./iozone -a -i 6 -i 7 -s 30M -r 1M -r 1kb
-http://www.thegeekstuff.com/2011/05/iozone-examples/
